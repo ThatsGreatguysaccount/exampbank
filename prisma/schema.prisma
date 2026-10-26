@@ -1,0 +1,248 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  CUSTOMER
+  ADMIN
+}
+
+enum KycStatus {
+  PENDING_DOCUMENTS
+  PENDING_REVIEW
+  APPROVED
+  REJECTED
+}
+
+enum DocumentKind {
+  ID_FRONT
+  ID_BACK
+  BANK_STATEMENT
+}
+
+enum DocumentStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+enum AccountType {
+  CHEQUING
+  SAVINGS
+  TFSA
+  RRSP
+  RRIF
+  GIC
+  OTHER
+}
+
+enum AccountStatus {
+  ACTIVE
+  FROZEN
+  CLOSED
+}
+
+enum TxKind {
+  TRANSFER
+  BILL_PAYMENT
+  CHEQUE_DEPOSIT
+  ETRANSFER
+  WIRE_TRANSFER
+  ADMIN_CREDIT
+  ADMIN_DEBIT
+  INTEREST
+  FEE
+  INVESTMENT
+}
+
+enum TxStatus {
+  PENDING
+  COMPLETED
+  REJECTED
+}
+
+model User {
+  id            Int        @id @default(autoincrement())
+  role          Role       @default(CUSTOMER)
+  email         String     @unique
+  passwordHash  String
+  firstName     String
+  lastName      String
+  phone         String?
+  dateOfBirth   DateTime?  @db.Date
+  addressLine   String?
+  city          String?
+  province      String?
+  postalCode    String?
+  country       String?
+  memberNumber  String?    @unique
+  branch        String?
+  kycStatus     KycStatus  @default(PENDING_DOCUMENTS)
+  kycNote       String?    @db.Text
+  kycReviewedAt DateTime?
+  suspended     Boolean    @default(false)
+  createdAt     DateTime   @default(now())
+  updatedAt     DateTime   @updatedAt
+  documents     Document[]
+  accounts      Account[]
+  payees        Payee[]
+  applications  ProductApplication[]
+}
+
+enum PayeeType {
+  BILL
+  ETRANSFER
+  INTERNATIONAL
+}
+
+/// Bill payees, Interac e-Transfer contacts and international wire beneficiaries.
+/// `name` is the company, contact or beneficiary name; `accountNumber` is the bill reference
+/// or, for wires, the IBAN / foreign account number.
+model Payee {
+  id                 Int       @id @default(autoincrement())
+  userId             Int
+  user               User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  type               PayeeType @default(BILL)
+  name               String
+  accountNumber      String?
+  email              String?
+  phone              String?
+  swiftBic           String?
+  bankName           String?
+  bankCountry        String?   @db.Char(2)
+  routingCode        String?
+  beneficiaryAddress String?
+  beneficiaryCity    String?
+  beneficiaryCountry String?   @db.Char(2)
+  currency           String?   @db.Char(3)
+  createdAt          DateTime  @default(now())
+
+  @@unique([userId, type, name])
+}
+
+model Document {
+  id         Int            @id @default(autoincrement())
+  userId     Int
+  user       User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  kind       DocumentKind
+  idType     String?
+  fileName   String
+  storedName String         @unique
+  mimeType   String
+  size       Int
+  status     DocumentStatus @default(PENDING)
+  reviewNote String?        @db.Text
+  reviewedAt DateTime?
+  createdAt  DateTime       @default(now())
+
+  @@index([userId])
+}
+
+model Account {
+  id           Int           @id @default(autoincrement())
+  userId       Int
+  user         User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  type         AccountType
+  name         String
+  number       String        @unique
+  balance      Decimal       @default(0) @db.Decimal(14, 2)
+  interestRate Decimal?      @db.Decimal(5, 2)
+  status       AccountStatus @default(ACTIVE)
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+  transactions Transaction[]
+
+  @@index([userId])
+}
+
+model Transaction {
+  id          Int       @id @default(autoincrement())
+  accountId   Int
+  account     Account   @relation(fields: [accountId], references: [id], onDelete: Cascade)
+  kind        TxKind
+  status      TxStatus  @default(COMPLETED)
+  title       String
+  description String?   @db.Text
+  amount      Decimal   @db.Decimal(14, 2)
+  icon        String    @default("fa-receipt")
+  reference   String    @unique
+  meta        Json?
+  postedAt    DateTime  @default(now())
+  reviewNote  String?   @db.Text
+  reviewedAt  DateTime?
+  createdAt   DateTime  @default(now())
+
+  @@index([accountId, postedAt])
+  @@index([status])
+}
+
+model Setting {
+  key   String @id
+  value String @db.Text
+}
+
+enum ProductKind {
+  GENERAL
+  TFSA_FUNDS
+  RRSP_GIC
+  RRIF
+  MORTGAGE
+}
+
+enum ApplicationStatus {
+  PENDING
+  APPROVED
+  DECLINED
+  CANCELLED
+}
+
+/// A product tile on the dashboard and its detail page. `kind` selects the page template,
+/// calculator and application form; `options` holds the rate table as
+/// [{ label, rate, months?, note? }] (portfolios, GIC terms, mortgage terms…).
+model Product {
+  id           Int                  @id @default(autoincrement())
+  icon         String
+  title        String
+  description  String
+  slug         String?              @unique
+  kind         ProductKind          @default(GENERAL)
+  summary      String?              @db.Text
+  minAmount    Decimal?             @db.Decimal(14, 2)
+  options      Json?
+  sortOrder    Int                  @default(0)
+  active       Boolean              @default(true)
+  applications ProductApplication[]
+}
+
+/// A customer's application for a product. Investment products hold the amount on
+/// `sourceAccountId` (via `holdTransactionId`) until an admin approves and opens the account.
+model ProductApplication {
+  id                Int               @id @default(autoincrement())
+  reference         String            @unique
+  userId            Int
+  user              User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  productId         Int
+  product           Product           @relation(fields: [productId], references: [id], onDelete: Restrict)
+  kind              ProductKind
+  status            ApplicationStatus @default(PENDING)
+  optionLabel       String?
+  rate              Decimal?          @db.Decimal(5, 2)
+  termMonths        Int?
+  amount            Decimal?          @db.Decimal(14, 2)
+  approvedAmount    Decimal?          @db.Decimal(14, 2)
+  sourceAccountId   Int?
+  holdTransactionId Int?
+  openedAccountId   Int?
+  details           Json
+  adminNote         String?           @db.Text
+  createdAt         DateTime          @default(now())
+  reviewedAt        DateTime?
+
+  @@index([userId])
+  @@index([status])
+}

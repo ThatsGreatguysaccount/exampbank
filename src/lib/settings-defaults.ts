@@ -1,0 +1,16 @@
+export const DEFAULT_SETTINGS = {
+  bankName: "Prairie Credit Union",
+  bankTagline: "Saskatchewan · Member owned",
+  brandIcon: "fa-leaf",
+  brandMessage: "Prairie Credit Union — Member owned since 1952",
+  currency: "CAD",
+  locale: "en-CA",
+  timezone: "America/Regina",
+  memberPrefix: "SJ",
+  defaultBranch: "Saskatoon – Broadway",
+  footerLeft: "Prairie Credit Union · Saskatchewan",
+  footerRight: "Deposits 100% guaranteed by CUDGC",
+  chequeHoldNotice: "Funds are held until the deposit is reviewed (usually 2 business days).",
+  wireFee: "45.00",
+  wireNotice: "Wires sent before 2 p.m. CST usually arrive in 1–3 business days. Funds are converted at our exchange rate on the processing date.",
+};

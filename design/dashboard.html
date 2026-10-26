@@ -1,0 +1,651 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Prairie Credit Union · Dashboard</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; font-family:'Inter',system-ui,-apple-system,sans-serif; }
+  body { background:#f4f7fc; display:flex; justify-content:center; padding:1.5rem; min-height:100vh; }
+  .dashboard { max-width:1280px; width:100%; background:#fff; border-radius:2rem;
+    box-shadow:0 20px 35px -8px rgba(0,20,30,.15); padding:2rem; position:relative; }
+
+  /* Top bar */
+  .top-bar { display:flex; justify-content:space-between; align-items:center; margin-bottom:2rem;
+    flex-wrap:wrap; gap:1rem; }
+  .brand { display:flex; align-items:center; gap:.75rem; cursor:pointer; }
+  .brand i { font-size:2rem; color:#007287; background:#e0f2f5; padding:.65rem; border-radius:1rem; }
+  .brand h1 { font-size:1.6rem; font-weight:600; color:#003a47; letter-spacing:-.02em; }
+  .brand span { font-size:.85rem; color:#3d6b75; display:block; margin-top:.1rem; }
+  .user-greeting { display:flex; align-items:center; gap:1rem; background:#f2f6fa;
+    padding:.5rem 1.2rem .5rem 1.5rem; border-radius:3rem; cursor:pointer; transition:.15s; }
+  .user-greeting:hover { background:#e8eff5; }
+  .avatar { background:#007287; color:#fff; width:42px; height:42px; border-radius:50%;
+    display:flex; align-items:center; justify-content:center; font-weight:600; font-size:1.1rem; }
+  .name { font-weight:600; color:#003a47; font-size:.95rem; }
+  .name small { display:block; font-weight:400; font-size:.72rem; color:#3d6b75; margin-top:.1rem; }
+
+  /* Cards */
+  .cards { display:grid; grid-template-columns:repeat(auto-fit,minmax(200px,1fr)); gap:1.25rem; margin-bottom:2rem; }
+  .card { background:#fff; border:1px solid #e2e9f0; border-radius:1.5rem; padding:1.5rem 1.2rem;
+    cursor:pointer; transition:.2s; position:relative; }
+  .card:hover { border-color:#8ecbd6; box-shadow:0 10px 20px -10px rgba(0,114,135,.3); transform:translateY(-2px); }
+  .card:active { transform:translateY(0); }
+  .card-label { font-size:.8rem; text-transform:uppercase; letter-spacing:.02em; color:#3d6b75;
+    font-weight:500; display:flex; align-items:center; gap:.45rem; margin-bottom:.65rem; }
+  .card-amount { font-size:1.75rem; font-weight:700; color:#003a47; line-height:1.2; margin-bottom:.35rem; }
+  .card-sub { font-size:.82rem; color:#4d7a85; display:flex; justify-content:space-between;
+    align-items:center; border-top:1px dashed #d5e5e9; padding-top:.7rem; margin-top:.5rem; }
+  .trend-up { color:#007287; background:#e0f2f5; padding:.15rem .5rem; border-radius:2rem;
+    font-size:.72rem; font-weight:600; }
+
+  /* Main grid */
+  .main-grid { display:grid; grid-template-columns:1.5fr 1fr; gap:1.5rem; margin-bottom:2rem; }
+  @media (max-width:800px) { .main-grid { grid-template-columns:1fr; } .dashboard { padding:1.25rem; } }
+
+  .section-header { display:flex; justify-content:space-between; align-items:center; margin-bottom:1rem; }
+  .section-header h2 { font-size:1.15rem; font-weight:600; color:#003a47; display:flex; align-items:center; gap:.5rem; }
+  .link-btn { color:#007287; font-size:.82rem; font-weight:500; text-decoration:none;
+    background:#e0f2f5; padding:.4rem 1rem; border-radius:2rem; border:none; cursor:pointer;
+    transition:.15s; display:inline-flex; align-items:center; gap:.35rem; }
+  .link-btn:hover { background:#c7e8ee; }
+
+  /* Filters */
+  .filter-bar { display:flex; gap:.5rem; margin-bottom:.8rem; flex-wrap:wrap; }
+  .filter-btn { background:#f2f6fa; border:1px solid #e2e9f0; color:#3d5e4f; font-size:.78rem;
+    font-weight:500; padding:.35rem .9rem; border-radius:2rem; cursor:pointer; transition:.15s; }
+  .filter-btn.active { background:#007287; color:#fff; border-color:#007287; }
+  .filter-btn:hover:not(.active) { background:#e8eff5; }
+
+  /* Transactions */
+  .transaction-list { background:#fff; border:1px solid #e2e9f0; border-radius:1.5rem;
+    overflow:hidden; max-height:420px; overflow-y:auto; }
+  .transaction-item { display:flex; justify-content:space-between; align-items:center;
+    padding:1rem 1.5rem; border-bottom:1px solid #f0f5f2; cursor:pointer; transition:.1s; }
+  .transaction-item:last-child { border-bottom:none; }
+  .transaction-item:hover { background:#f4fbfc; }
+  .trans-left { display:flex; align-items:center; gap:1rem; }
+  .trans-icon { width:40px; height:40px; background:#e6f4f6; border-radius:12px;
+    display:flex; align-items:center; justify-content:center; color:#007287; font-size:1.05rem; flex-shrink:0; }
+  .trans-title { font-weight:600; color:#003a47; font-size:.92rem; }
+  .trans-date { font-size:.74rem; color:#5c8a94; margin-top:.15rem; }
+  .trans-amount { font-weight:600; font-size:.98rem; white-space:nowrap; }
+  .debit { color:#b34a4a; } .credit { color:#007287; }
+  .no-trans { padding:2rem; text-align:center; color:#5c8a94; font-size:.9rem; }
+
+  /* Transfer card */
+  .transfer-card { background:linear-gradient(145deg,#fff,#f5fbfc); border:1px solid #c9e5ea;
+    border-radius:1.5rem; padding:1.5rem; }
+  .transfer-card h3 { font-size:1.15rem; font-weight:600; color:#003a47; margin-bottom:1.25rem;
+    display:flex; align-items:center; gap:.5rem; }
+  .form-group { margin-bottom:1rem; }
+  .form-group label { display:block; font-size:.78rem; font-weight:500; color:#3d6b75;
+    margin-bottom:.3rem; }
+  select, input { width:100%; padding:.8rem 1rem; border:1px solid #c5dfe4; border-radius:.9rem;
+    font-size:.88rem; background:#fff; color:#003a47; outline:none; transition:.15s; }
+  select:focus, input:focus { border-color:#007287; box-shadow:0 0 0 3px rgba(0,114,135,.12); }
+  .amount-input { position:relative; }
+  .amount-input::before { content:'$'; position:absolute; left:1rem; top:50%;
+    transform:translateY(-50%); color:#3d6b75; font-weight:500; }
+  .amount-input input { padding-left:2rem; }
+
+  .btn-primary { width:100%; background:#007287; color:#fff; border:none; padding:.9rem;
+    border-radius:.9rem; font-weight:600; font-size:.92rem; cursor:pointer; display:flex;
+    align-items:center; justify-content:center; gap:.6rem; transition:.15s;
+    box-shadow:0 6px 12px -6px rgba(0,114,135,.4); }
+  .btn-primary:hover { background:#005a6b; }
+  .btn-primary:active { transform:scale(.99); }
+  .btn-primary:disabled { background:#9cb8bf; cursor:not-allowed; box-shadow:none; }
+
+  .btn-secondary { background:#f2f6fa; color:#007287; border:1px solid #c9e5ea;
+    padding:.7rem 1.2rem; border-radius:.9rem; font-weight:600; font-size:.85rem;
+    cursor:pointer; transition:.15s; display:inline-flex; align-items:center; gap:.5rem; }
+  .btn-secondary:hover { background:#e6f4f6; }
+
+  .quick-actions { margin-top:1.5rem; display:flex; gap:.7rem; flex-wrap:wrap; }
+  .quick-btn { display:flex; align-items:center; gap:.55rem; background:#e6f4f6;
+    padding:.7rem 1.1rem; border-radius:3rem; border:none; cursor:pointer;
+    font-size:.82rem; font-weight:500; color:#003a47; transition:.15s; }
+  .quick-btn:hover { background:#d0eaee; transform:translateY(-1px); }
+  .quick-btn i { color:#007287; }
+
+  /* Product row */
+  .product-row { display:flex; flex-wrap:wrap; gap:1rem; margin-top:1.5rem; }
+  .product-item { background:#fff; border:1px solid #e2e9f0; border-radius:1.2rem;
+    padding:1rem 1.4rem; display:flex; align-items:center; gap:.9rem; flex:1 1 180px;
+    cursor:pointer; transition:.15s; }
+  .product-item:hover { background:#f4fbfc; border-color:#8ecbd6; }
+  .product-icon { background:#e0f2f5; border-radius:1rem; width:46px; height:46px;
+    display:flex; align-items:center; justify-content:center; color:#007287; font-size:1.25rem; flex-shrink:0; }
+  .product-info h4 { font-size:.88rem; font-weight:600; color:#003a47; }
+  .product-info p { font-size:.74rem; color:#4d7a85; margin-top:.2rem; }
+
+  /* Footer */
+  .footer-note { margin-top:2rem; border-top:1px solid #e2e9f0; padding-top:1.2rem;
+    font-size:.74rem; color:#5c8a94; display:flex; justify-content:space-between;
+    flex-wrap:wrap; gap:.5rem; }
+
+  /* Toast */
+  .toast { position:fixed; bottom:2rem; right:2rem; background:#003a47; color:#fff;
+    padding:1rem 1.5rem; border-radius:1rem; display:flex; align-items:center; gap:.7rem;
+    font-size:.88rem; font-weight:500; box-shadow:0 10px 30px -10px rgba(0,0,0,.4);
+    transform:translateY(150%); transition:transform .3s; z-index:1000; max-width:380px; }
+  .toast.show { transform:translateY(0); }
+  .toast.success { background:#007287; } .toast.error { background:#b34a4a; }
+  .toast.info { background:#2c5282; }
+
+  /* Modal */
+  .modal-overlay { position:fixed; inset:0; background:rgba(0,58,71,.55); backdrop-filter:blur(3px);
+    display:none; align-items:center; justify-content:center; padding:1.5rem; z-index:999; }
+  .modal-overlay.show { display:flex; }
+  .modal { background:#fff; border-radius:1.5rem; padding:2rem; max-width:480px; width:100%;
+    max-height:90vh; overflow-y:auto; animation:pop .2s ease-out; }
+  @keyframes pop { from { transform:scale(.95); opacity:0; } to { transform:scale(1); opacity:1; } }
+  .modal-header { display:flex; justify-content:space-between; align-items:center; margin-bottom:1.25rem; }
+  .modal-header h3 { font-size:1.25rem; font-weight:600; color:#003a47;
+    display:flex; align-items:center; gap:.6rem; }
+  .modal-close { background:#f2f6fa; border:none; width:34px; height:34px; border-radius:50%;
+    cursor:pointer; font-size:1rem; color:#3d6b75; display:flex; align-items:center;
+    justify-content:center; transition:.15s; }
+  .modal-close:hover { background:#e2e9f0; }
+  .modal-body { font-size:.9rem; color:#3d6b75; line-height:1.6; }
+  .modal-body .detail-row { display:flex; justify-content:space-between; padding:.6rem 0;
+    border-bottom:1px solid #f0f5f2; }
+  .modal-body .detail-row:last-child { border-bottom:none; }
+  .modal-body .detail-row strong { color:#003a47; }
+  .modal-footer { margin-top:1.5rem; display:flex; gap:.75rem; }
+  .modal-footer .btn-primary, .modal-footer .btn-secondary { flex:1; }
+
+  .badge { display:inline-block; padding:.2rem .6rem; border-radius:2rem; font-size:.7rem;
+    font-weight:600; }
+  .badge-green { background:#e0f2f5; color:#007287; }
+  .badge-red { background:#fae6e6; color:#b34a4a; }
+</style>
+</head>
+<body>
+
+<div class="dashboard">
+  <!-- Top bar -->
+  <div class="top-bar">
+    <div class="brand" onclick="showToast('Prairie Credit Union — Member owned since 1952','info')">
+      <i class="fas fa-leaf"></i>
+      <div>
+        <h1>Prairie Credit Union</h1>
+        <span>Saskatchewan · Member owned</span>
+      </div>
+    </div>
+    <div class="user-greeting" onclick="openProfileModal()">
+      <div class="avatar">JD</div>
+      <div class="name">John Doe <small>Member #SJ-48291</small></div>
+    </div>
+  </div>
+
+  <!-- Cards -->
+  <div class="cards" id="cardsContainer"></div>
+
+  <!-- Main grid -->
+  <div class="main-grid">
+    <div>
+      <div class="section-header">
+        <h2><i class="fas fa-clock-rotate-left"></i> Recent activity</h2>
+        <button class="link-btn" onclick="openAllTransactionsModal()">
+          <i class="fas fa-list"></i> View all
+        </button>
+      </div>
+
+      <div class="filter-bar" id="filterBar">
+        <button class="filter-btn active" data-filter="all">All</button>
+        <button class="filter-btn" data-filter="chequing">Chequing</button>
+        <button class="filter-btn" data-filter="savings">Savings</button>
+        <button class="filter-btn" data-filter="tfsa">TFSA</button>
+        <button class="filter-btn" data-filter="rrsp">RRSP</button>
+        <button class="filter-btn" data-filter="rrif">RRIF</button>
+      </div>
+
+      <div class="transaction-list" id="transactionList"></div>
+
+      <div class="product-row" id="productRow"></div>
+    </div>
+
+    <div class="transfer-card">
+      <h3><i class="fas fa-arrow-right-arrow-left"></i> Move money</h3>
+      <form id="transferForm">
+        <div class="form-group">
+          <label>From account</label>
+          <select id="fromAccount"></select>
+        </div>
+        <div class="form-group">
+          <label>To account</label>
+          <select id="toAccount"></select>
+        </div>
+        <div class="form-group">
+          <label>Amount (CAD)</label>
+          <div class="amount-input">
+            <input type="number" id="transferAmount" placeholder="0.00" step="0.01" min="1" value="100.00">
+          </div>
+        </div>
+        <button type="submit" class="btn-primary" id="transferBtn">
+          <i class="fas fa-check-circle"></i> Transfer now
+        </button>
+      </form>
+
+      <div class="quick-actions">
+        <button class="quick-btn" onclick="openBillPayModal()"><i class="fas fa-file-invoice"></i> Pay bills</button>
+        <button class="quick-btn" onclick="openDepositModal()"><i class="fas fa-qrcode"></i> Deposit cheque</button>
+        <button class="quick-btn" onclick="openEtransferModal()"><i class="fas fa-paper-plane"></i> e-Transfer</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="footer-note">
+    <span><i class="fas fa-shield-alt"></i> Prairie Credit Union · Saskatchewan</span>
+    <span><i class="fas fa-lock"></i> Member CIPF / CDIC coverage</span>
+  </div>
+</div>
+
+<!-- Toast -->
+<div class="toast" id="toast"><i class="fas fa-circle-check"></i><span id="toastText"></span></div>
+
+<!-- Generic Modal -->
+<div class="modal-overlay" id="modalOverlay">
+  <div class="modal">
+    <div class="modal-header">
+      <h3 id="modalTitle"><i class="fas fa-circle-info"></i> <span>Title</span></h3>
+      <button class="modal-close" onclick="closeModal()"><i class="fas fa-times"></i></button>
+    </div>
+    <div class="modal-body" id="modalBody"></div>
+    <div class="modal-footer" id="modalFooter"></div>
+  </div>
+</div>
+
+<script>
+/* ============================================================
+   STATE  — RRIF added
+============================================================ */
+const state = {
+  accounts: {
+    chequing: { name:'Chequing',   number:'4821', balance:3472.80,  icon:'fa-wallet',          type:'chequing', trend:'+2.4%' },
+    savings:  { name:'Savings',    number:'9273', balance:21680.55, icon:'fa-piggy-bank',       type:'savings',  trend:'+1.8%' },
+    tfsa:     { name:'TFSA Invest',number:'—',    balance:14250.20, icon:'fa-chart-line',       type:'tfsa',     trend:'+4.1%' },
+    rrsp:     { name:'RRSP',       number:'—',    balance:38920.00, icon:'fa-building-columns', type:'rrsp',     trend:'+3.2%' },
+    rrif:     { name:'RRIF',       number:'—',    balance:52310.75, icon:'fa-hand-holding-dollar', type:'rrif', trend:'+2.6%' }
+  },
+  transactions: [
+    { id:1, title:'Save-On Foods',            account:'chequing', amount:-82.45,  date:'Today, 11:24 AM',     icon:'fa-cart-shopping' },
+    { id:2, title:'Payroll · SaskPower',      account:'chequing', amount:2145.60, date:'Yesterday, 8:02 AM',  icon:'fa-briefcase' },
+    { id:3, title:'Tim Hortons',              account:'chequing', amount:-6.95,   date:'Feb 18, 3:15 PM',     icon:'fa-mug-hot' },
+    { id:4, title:'Transfer to Savings',      account:'savings',  amount:500.00,  date:'Feb 17, 9:40 AM',     icon:'fa-arrow-right-arrow-left' },
+    { id:5, title:'Co-op Gas',                account:'chequing', amount:-47.30,  date:'Feb 16, 5:22 PM',     icon:'fa-gas-pump' },
+    { id:6, title:'TFSA Contribution',        account:'tfsa',     amount:1000.00, date:'Feb 15, 10:00 AM',    icon:'fa-chart-line' },
+    { id:7, title:'SaskTel',                  account:'chequing', amount:-89.00,  date:'Feb 14, 2:30 PM',     icon:'fa-phone' },
+    { id:8, title:'RRIF Minimum Withdrawal',  account:'rrif',     amount:-1250.00,date:'Feb 13, 9:00 AM',     icon:'fa-hand-holding-dollar' },
+    { id:9, title:'Transfer from Chequing',   account:'savings',  amount:500.00,  date:'Feb 13, 9:40 AM',     icon:'fa-arrow-right-arrow-left' },
+    { id:10,title:'Sobeys',                   account:'chequing', amount:-124.10, date:'Feb 12, 4:10 PM',     icon:'fa-cart-shopping' }
+  ],
+  activeFilter:'all'
+};
+
+/* ============================================================
+   HELPERS
+============================================================ */
+const fmt = v => new Intl.NumberFormat('en-CA',{style:'currency',currency:'CAD'}).format(v);
+const el = id => document.getElementById(id);
+
+function showToast(msg, type='success') {
+  const toast = el('toast');
+  toast.className = 'toast show ' + type;
+  const icon = type==='error'?'fa-circle-exclamation':type==='info'?'fa-circle-info':'fa-circle-check';
+  toast.innerHTML = `<i class="fas ${icon}"></i><span>${msg}</span>`;
+  clearTimeout(window._toastTimer);
+  window._toastTimer = setTimeout(()=>toast.classList.remove('show'), 3200);
+}
+
+/* ============================================================
+   RENDER: ACCOUNT CARDS
+============================================================ */
+function renderCards() {
+  const container = el('cardsContainer');
+  container.innerHTML = '';
+  Object.entries(state.accounts).forEach(([key, acc]) => {
+    const card = document.createElement('div');
+    card.className = 'card';
+    card.onclick = () => openAccountModal(key);
+    const sub = acc.number !== '—' ? `**** ${acc.number}` : 'Registered plan';
+    card.innerHTML = `
+      <div class="card-label"><i class="fas ${acc.icon}"></i> ${acc.name}</div>
+      <div class="card-amount">${fmt(acc.balance)}</div>
+      <div class="card-sub">
+        <span>${sub}</span>
+        <span class="trend-up"><i class="fas fa-arrow-up"></i> ${acc.trend}</span>
+      </div>`;
+    container.appendChild(card);
+  });
+}
+
+/* ============================================================
+   RENDER: TRANSACTIONS
+============================================================ */
+function renderTransactions() {
+  const list = el('transactionList');
+  const filtered = state.transactions.filter(t =>
+    state.activeFilter === 'all' || t.account === state.activeFilter
+  );
+
+  if (filtered.length === 0) {
+    list.innerHTML = '<div class="no-trans"><i class="fas fa-inbox" style="font-size:2rem;opacity:.4;"></i><br>No transactions for this account.</div>';
+    return;
+  }
+
+  list.innerHTML = filtered.map(t => {
+    const isCredit = t.amount > 0;
+    return `
+      <div class="transaction-item" onclick='openTransactionModal(${t.id})'>
+        <div class="trans-left">
+          <div class="trans-icon"><i class="fas ${t.icon}"></i></div>
+          <div class="trans-details">
+            <div class="trans-title">${t.title}</div>
+            <div class="trans-date">${t.date} · ${state.accounts[t.account].name}</div>
+          </div>
+        </div>
+        <div class="trans-amount ${isCredit?'credit':'debit'}">
+          ${isCredit?'+':''}${fmt(t.amount)}
+        </div>
+      </div>`;
+  }).join('');
+}
+
+/* ============================================================
+   RENDER: FILTERS
+============================================================ */
+el('filterBar').addEventListener('click', e => {
+  const btn = e.target.closest('.filter-btn');
+  if (!btn) return;
+  document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  state.activeFilter = btn.dataset.filter;
+  renderTransactions();
+});
+
+/* ============================================================
+   RENDER: TRANSFER SELECTS
+============================================================ */
+function renderSelects() {
+  const fromSel = el('fromAccount');
+  const toSel = el('toAccount');
+  const curFrom = fromSel.value;
+  const curTo = toSel.value;
+
+  const opts = Object.entries(state.accounts).map(([k,a]) =>
+    `<option value="${k}">${a.name}${a.number!=='—'?' **** '+a.number:''} (${fmt(a.balance)})</option>`
+  ).join('');
+
+  fromSel.innerHTML = opts;
+  toSel.innerHTML = opts;
+
+  if (curFrom && state.accounts[curFrom]) fromSel.value = curFrom;
+  if (curTo && state.accounts[curTo]) toSel.value = curTo;
+  if (fromSel.value === toSel.value) toSel.value = (fromSel.value === 'savings' ? 'chequing' : 'savings');
+}
+
+/* ============================================================
+   RENDER: PRODUCTS
+============================================================ */
+function renderProducts() {
+  const products = [
+    { icon:'fa-chart-pie',  title:'TFSA Mutual Funds', desc:'5.2% avg. return' },
+    { icon:'fa-umbrella',   title:'RRSP GIC',          desc:'4.1% · 2yr term' },
+    { icon:'fa-hand-holding-dollar', title:'RRIF Income Plan', desc:'2.6% payout' },
+    { icon:'fa-house',      title:'Mortgage pre-approval', desc:'5.1% 5yr fixed' }
+  ];
+  el('productRow').innerHTML = products.map(p => `
+    <div class="product-item" onclick="showToast('${p.title} — a specialist will contact you.','info')">
+      <div class="product-icon"><i class="fas ${p.icon}"></i></div>
+      <div class="product-info"><h4>${p.title}</h4><p>${p.desc}</p></div>
+    </div>
+  `).join('');
+}
+
+/* ============================================================
+   MODAL SYSTEM
+============================================================ */
+function openModal(title, bodyHTML, footerHTML='') {
+  el('modalTitle').innerHTML = title;
+  el('modalBody').innerHTML = bodyHTML;
+  el('modalFooter').innerHTML = footerHTML;
+  el('modalOverlay').classList.add('show');
+}
+function closeModal() { el('modalOverlay').classList.remove('show'); }
+el('modalOverlay').addEventListener('click', e => { if (e.target === el('modalOverlay')) closeModal(); });
+document.addEventListener('keydown', e => { if (e.key === 'Escape') closeModal(); });
+
+/* Account detail modal */
+function openAccountModal(key) {
+  const a = state.accounts[key];
+  const txs = state.transactions.filter(t => t.account === key);
+  const body = `
+    <div class="detail-row"><span>Account type</span><strong>${a.name}</strong></div>
+    <div class="detail-row"><span>Account number</span><strong>${a.number!=='—'?'**** '+a.number:'N/A'}</strong></div>
+    <div class="detail-row"><span>Available balance</span><strong style="color:#007287;">${fmt(a.balance)}</strong></div>
+    <div class="detail-row"><span>Recent activity</span><strong>${txs.length} transactions</strong></div>
+    <div style="margin-top:1rem;font-size:.82rem;color:#5c8a94;">
+      <i class="fas fa-info-circle"></i> This is a demo account. All data is simulated.
+    </div>`;
+  const footer = `
+    <button class="btn-secondary" onclick="closeModal()">Close</button>
+    <button class="btn-primary" onclick="closeModal();document.getElementById('fromAccount').value='${key}';showToast('${a.name} selected as source account.','info')">
+      <i class="fas fa-arrow-right-arrow-left"></i> Use for transfer
+    </button>`;
+  openModal(`<i class="fas ${a.icon}"></i> ${a.name}`, body, footer);
+}
+
+/* Transaction detail modal */
+function openTransactionModal(id) {
+  const t = state.transactions.find(x => x.id === id);
+  if (!t) return;
+  const isCredit = t.amount > 0;
+  const body = `
+    <div class="detail-row"><span>Description</span><strong>${t.title}</strong></div>
+    <div class="detail-row"><span>Account</span><strong>${state.accounts[t.account].name}</strong></div>
+    <div class="detail-row"><span>Date</span><strong>${t.date}</strong></div>
+    <div class="detail-row"><span>Type</span><strong><span class="badge ${isCredit?'badge-green':'badge-red'}">${isCredit?'Credit':'Debit'}</span></strong></div>
+    <div class="detail-row"><span>Amount</span><strong style="color:${isCredit?'#007287':'#b34a4a'};font-size:1.2rem;">${isCredit?'+':''}${fmt(t.amount)}</strong></div>
+    <div style="margin-top:1rem;font-size:.82rem;color:#5c8a94;"><i class="fas fa-receipt"></i> Transaction ID: TXN-${String(t.id).padStart(6,'0')}</div>`;
+  openModal(`<i class="fas ${t.icon}"></i> Transaction details`, body,
+    `<button class="btn-secondary" onclick="closeModal()">Close</button>`);
+}
+
+/* All transactions modal */
+function openAllTransactionsModal() {
+  const rows = [...state.transactions].sort((a,b)=>b.id-a.id).map(t => {
+    const isCredit = t.amount > 0;
+    return `<div class="detail-row">
+      <span>${t.title}<br><small style="color:#5c8a94;font-size:.72rem;">${t.date} · ${state.accounts[t.account].name}</small></span>
+      <strong style="color:${isCredit?'#007287':'#b34a4a'};white-space:nowrap;">${isCredit?'+':''}${fmt(t.amount)}</strong>
+    </div>`;
+  }).join('');
+  openModal(`<i class="fas fa-list"></i> All transactions`, rows,
+    `<button class="btn-secondary" onclick="closeModal()">Close</button>`);
+}
+
+/* Profile modal */
+function openProfileModal() {
+  const body = `
+    <div class="detail-row"><span>Name</span><strong>John Doe</strong></div>
+    <div class="detail-row"><span>Member number</span><strong>SJ-48291</strong></div>
+    <div class="detail-row"><span>Email</span><strong>john.doe@example.ca</strong></div>
+    <div class="detail-row"><span>Branch</span><strong>Saskatoon – Broadway</strong></div>
+    <div class="detail-row"><span>Member since</span><strong>2018</strong></div>
+    <div style="margin-top:1rem;font-size:.82rem;color:#5c8a94;"><i class="fas fa-shield-alt"></i> Your data is protected with 256-bit encryption.</div>`;
+  openModal(`<i class="fas fa-user-circle"></i> Profile`, body,
+    `<button class="btn-secondary" onclick="closeModal()">Close</button>
+     <button class="btn-primary" onclick="closeModal();showToast('Profile settings saved.','success')"><i class="fas fa-save"></i> Save</button>`);
+}
+
+/* Bill pay modal */
+function openBillPayModal() {
+  const body = `
+    <div class="form-group">
+      <label>Payee</label>
+      <select id="billPayee">
+        <option>SaskPower</option><option>SaskTel</option><option>City of Saskatoon</option>
+        <option>SaskEnergy</option><option>Credit Union Visa</option>
+      </select>
+    </div>
+    <div class="form-group">
+      <label>From account</label>
+      <select id="billFrom">
+        ${Object.entries(state.accounts).map(([k,a])=>`<option value="${k}">${a.name} (${fmt(a.balance)})</option>`).join('')}
+      </select>
+    </div>
+    <div class="form-group">
+      <label>Amount (CAD)</label>
+      <div class="amount-input"><input type="number" id="billAmount" placeholder="0.00" step="0.01" min="1" value="85.00"></div>
+    </div>`;
+  const footer = `
+    <button class="btn-secondary" onclick="closeModal()">Cancel</button>
+    <button class="btn-primary" onclick="submitBillPay()"><i class="fas fa-paper-plane"></i> Pay bill</button>`;
+  openModal(`<i class="fas fa-file-invoice"></i> Pay a bill`, body, footer);
+}
+
+function submitBillPay() {
+  const payee = el('billPayee').value;
+  const from = el('billFrom').value;
+  const amt = parseFloat(el('billAmount').value);
+  if (!amt || amt <= 0) return showToast('Enter a valid amount.','error');
+  if (amt > state.accounts[from].balance) return showToast('Insufficient funds.','error');
+
+  state.accounts[from].balance -= amt;
+  state.transactions.unshift({
+    id: Date.now(), title:`Bill payment · ${payee}`, account:from,
+    amount:-amt, date:'Just now', icon:'fa-file-invoice'
+  });
+  closeModal();
+  renderAll();
+  showToast(`Paid ${fmt(amt)} to ${payee}.`,'success');
+}
+
+/* Deposit modal */
+function openDepositModal() {
+  const body = `
+    <div class="form-group">
+      <label>Deposit to</label>
+      <select id="depTo">
+        ${Object.entries(state.accounts).map(([k,a])=>`<option value="${k}">${a.name} (${fmt(a.balance)})</option>`).join('')}
+      </select>
+    </div>
+    <div class="form-group">
+      <label>Cheque amount (CAD)</label>
+      <div class="amount-input"><input type="number" id="depAmount" placeholder="0.00" step="0.01" min="1" value="250.00"></div>
+    </div>
+    <div class="form-group">
+      <label>Cheque number</label>
+      <input type="text" id="depCheque" placeholder="e.g. 001234" value="001234">
+    </div>`;
+  const footer = `
+    <button class="btn-secondary" onclick="closeModal()">Cancel</button>
+    <button class="btn-primary" onclick="submitDeposit()"><i class="fas fa-camera"></i> Deposit</button>`;
+  openModal(`<i class="fas fa-qrcode"></i> Deposit a cheque`, body, footer);
+}
+
+function submitDeposit() {
+  const to = el('depTo').value;
+  const amt = parseFloat(el('depAmount').value);
+  if (!amt || amt <= 0) return showToast('Enter a valid amount.','error');
+  state.accounts[to].balance += amt;
+  state.transactions.unshift({
+    id: Date.now(), title:'Mobile cheque deposit', account:to,
+    amount:amt, date:'Just now', icon:'fa-qrcode'
+  });
+  closeModal();
+  renderAll();
+  showToast(`Deposited ${fmt(amt)}. Funds on hold 2 business days.`,'success');
+}
+
+/* e-Transfer modal */
+function openEtransferModal() {
+  const body = `
+    <div class="form-group">
+      <label>Recipient email</label>
+      <input type="email" id="etEmail" placeholder="name@example.ca" value="friend@example.ca">
+    </div>
+    <div class="form-group">
+      <label>From account</label>
+      <select id="etFrom">
+        ${Object.entries(state.accounts).map(([k,a])=>`<option value="${k}">${a.name} (${fmt(a.balance)})</option>`).join('')}
+      </select>
+    </div>
+    <div class="form-group">
+      <label>Amount (CAD)</label>
+      <div class="amount-input"><input type="number" id="etAmount" placeholder="0.00" step="0.01" min="1" value="50.00"></div>
+    </div>`;
+  const footer = `
+    <button class="btn-secondary" onclick="closeModal()">Cancel</button>
+    <button class="btn-primary" onclick="submitEtransfer()"><i class="fas fa-paper-plane"></i> Send e-Transfer</button>`;
+  openModal(`<i class="fas fa-paper-plane"></i> Send INTERAC e-Transfer`, body, footer);
+}
+
+function submitEtransfer() {
+  const email = el('etEmail').value;
+  const from = el('etFrom').value;
+  const amt = parseFloat(el('etAmount').value);
+  if (!email || !email.includes('@')) return showToast('Enter a valid email.','error');
+  if (!amt || amt <= 0) return showToast('Enter a valid amount.','error');
+  if (amt > state.accounts[from].balance) return showToast('Insufficient funds.','error');
+
+  state.accounts[from].balance -= amt;
+  state.transactions.unshift({
+    id: Date.now(), title:`e-Transfer to ${email}`, account:from,
+    amount:-amt, date:'Just now', icon:'fa-paper-plane'
+  });
+  closeModal();
+  renderAll();
+  showToast(`Sent ${fmt(amt)} to ${email}.`,'success');
+}
+
+/* ============================================================
+   TRANSFER FORM SUBMIT
+============================================================ */
+el('transferForm').addEventListener('submit', e => {
+  e.preventDefault();
+  const from = el('fromAccount').value;
+  const to = el('toAccount').value;
+  const amt = parseFloat(el('transferAmount').value);
+
+  if (!amt || amt <= 0) return showToast('Enter a valid amount.','error');
+  if (from === to) return showToast('Choose two different accounts.','error');
+  if (amt > state.accounts[from].balance) {
+    return showToast(`Insufficient funds in ${state.accounts[from].name}. Available: ${fmt(state.accounts[from].balance)}`,'error');
+  }
+
+  state.accounts[from].balance -= amt;
+  state.accounts[to].balance += amt;
+  state.transactions.unshift({
+    id: Date.now(), title:`Transfer to ${state.accounts[to].name}`, account:from,
+    amount:-amt, date:`Just now`, icon:'fa-arrow-right-arrow-left'
+  });
+  state.transactions.unshift({
+    id: Date.now()+1, title:`Transfer from ${state.accounts[from].name}`, account:to,
+    amount:amt, date:`Just now`, icon:'fa-arrow-right-arrow-left'
+  });
+
+  renderAll();
+  el('transferAmount').value = '100.00';
+  showToast(`Moved ${fmt(amt)} from ${state.accounts[from].name} to ${state.accounts[to].name}.`,'success');
+});
+
+/* ============================================================
+   RENDER ALL
+============================================================ */
+function renderAll() {
+  renderCards();
+  renderSelects();
+  renderTransactions();
+  renderProducts();
+}
+
+/* INIT */
+renderAll();
+</script>
+</body>
+</html>
