@@ -3,15 +3,14 @@ const esc = (v: string) =>
 
 const SHIELD = `<svg viewBox="0 0 24 24" width="30" height="30" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3l8 3v6c0 4.5-3.4 8.3-8 9-4.6-.7-8-4.5-8-9V6l8-3z"/><rect x="9" y="11" width="6" height="5" rx="1"/><path d="M10 11V9.5a2 2 0 014 0V11"/></svg>`;
 
-function layout(title: string, bankName: string, body: string) {
-  const bank = esc(bankName);
+function layout(title: string, body: string) {
   return `<!doctype html>
 <html lang="en">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="robots" content="noindex, nofollow">
-<title>${esc(title)} · ${bank}</title>
+<title>${esc(title)}</title>
 <style>
   *{box-sizing:border-box}
   body{margin:0;min-height:100vh;display:flex;align-items:center;justify-content:center;padding:1.5rem;
@@ -19,8 +18,6 @@ function layout(title: string, bankName: string, body: string) {
     background:linear-gradient(160deg,#0b3d4a 0%,#007287 100%)}
   main{width:100%;max-width:560px;background:#fff;border-radius:20px;padding:2.5rem 2.25rem;
     box-shadow:0 30px 60px -20px rgba(0,0,0,.45)}
-  .brand{display:flex;align-items:center;gap:.6rem;font-weight:700;color:#0b3d4a;margin-bottom:2rem}
-  .brand-mark{width:34px;height:34px;border-radius:10px;background:#e3f3f6;color:#007287;display:grid;place-items:center;font-size:.95rem}
   .icon{width:60px;height:60px;border-radius:16px;background:#fdecec;color:#b42318;display:grid;place-items:center;margin-bottom:1.25rem}
   .code{font-size:.75rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:#b42318;margin:0 0 .4rem}
   h1{font-size:1.6rem;margin:0 0 .9rem;color:#0b3d4a}
@@ -33,7 +30,6 @@ function layout(title: string, bankName: string, body: string) {
 </head>
 <body>
 <main>
-  <div class="brand"><span class="brand-mark">${bank.charAt(0)}</span>${bank}</div>
   ${body}
 </main>
 </body>
@@ -41,15 +37,13 @@ function layout(title: string, bankName: string, body: string) {
 }
 
 export function restrictedPage(o: { bankName: string; ip: string | null; reference: string; time: Date }) {
-  const bank = esc(o.bankName);
   return layout(
     "Access restricted",
-    o.bankName,
     `<div class="icon">${SHIELD}</div>
   <p class="code">Error 403 · Access restricted</p>
-  <h1>This service is available to authorized ${bank} users only</h1>
-  <p>Access to ${bank} online banking is limited to approved networks. For your security and the security of our members, connections from your current network have not been authorized.</p>
-  <p>If you believe you should have access, please contact ${bank} or your system administrator and quote the reference below so your access can be reviewed.</p>
+  <h1>This service is available to authorized users only</h1>
+  <p>Access to online banking is limited to approved networks. For your security and the security of our members, connections from your current network have not been authorized.</p>
+  <p>If you believe you should have access, please contact your system administrator and quote the reference below so your access can be reviewed.</p>
   <dl>
     <dt>Your IP address</dt><dd>${esc(o.ip ?? "Unavailable")}</dd>
     <dt>Reference</dt><dd>${esc(o.reference)}</dd>
@@ -59,10 +53,9 @@ export function restrictedPage(o: { bankName: string; ip: string | null; referen
   );
 }
 
-export function unavailablePage(bankName: string) {
+export function unavailablePage(_bankName?: string) {
   return layout(
     "Service temporarily unavailable",
-    bankName,
     `<p class="code">Error 503</p>
   <h1>Service temporarily unavailable</h1>
   <p>We're unable to verify your access right now. Please try again in a few minutes.</p>`,
